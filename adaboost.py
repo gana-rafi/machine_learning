@@ -8,63 +8,35 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from adaclass import AdaBoost
+mpl.use('Qt5Agg')
+from PyQt5 import QtWidgets
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 
 
-def plot_adaboost(X: np.ndarray,
-                  y: np.ndarray,
-                  clf=None,
-                  sample_weights: Optional[np.ndarray] = None,
-                  annotate: bool = False,
-                  ax: Optional[mpl.axes.Axes] = None) -> None:
-    """ Plot ± samples in 2D, optionally with decision boundary if model is provided. """
+class ScrollableWindow(QtWidgets.QMainWindow):
+    def __init__(self, fig):
+        self.qapp = QtWidgets.QApplication([])
 
-    assert set(y) == {-1, 1}, 'Expecting response labels to be ±1'
+        QtWidgets.QMainWindow.__init__(self)
+        self.widget = QtWidgets.QWidget()
+        self.setCentralWidget(self.widget)
+        self.widget.setLayout(QtWidgets.QVBoxLayout())
+        self.widget.layout().setContentsMargins(0,0,0,0)
+        self.widget.layout().setSpacing(0)
 
-    if not ax:
-        fig, ax = plt.subplots(figsize=(5, 5), dpi=100)
-        fig.set_facecolor('white')
+        self.fig = fig
+        self.canvas = FigureCanvas(self.fig)
+        self.canvas.draw()
+        self.scroll = QtWidgets.QScrollArea(self.widget)
+        self.scroll.setWidget(self.canvas)
 
-    pad = 1
-    x_min, x_max = X[:, 0].min() - pad, X[:, 0].max() + pad
-    y_min, y_max = X[:, 1].min() - pad, X[:, 1].max() + pad
+        self.nav = NavigationToolbar(self.canvas, self.widget)
+        self.widget.layout().addWidget(self.nav)
+        self.widget.layout().addWidget(self.scroll)
 
-    if sample_weights is not None:
-        sizes = np.array(sample_weights) * X.shape[0] * 100
-    else:
-        sizes = np.ones(shape=X.shape[0]) * 100
-
-    X_pos = X[y == 1]
-    sizes_pos = sizes[y == 1]
-    ax.scatter(*X_pos.T, s=sizes_pos, marker='+', color='red')
-
-    X_neg = X[y == -1]
-    sizes_neg = sizes[y == -1]
-    ax.scatter(*X_neg.T, s=sizes_neg, marker='.', c='blue')
-
-    if clf:
-        plot_step = 0.01
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, plot_step),
-                             np.arange(y_min, y_max, plot_step))
-
-        Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
-        Z = Z.reshape(xx.shape)
-
-        # If all predictions are positive class, adjust color map acordingly
-        if list(np.unique(Z)) == [1]:
-            fill_colors = ['r']
-        else:
-            fill_colors = ['b', 'r']
-
-        ax.contourf(xx, yy, Z, colors=fill_colors, alpha=0.2)
-
-    if annotate:
-        for i, (x, y) in enumerate(X):
-            offset = 0.05
-            ax.annotate(f'$x_{i + 1}$', (x + offset, y - offset))
-    ax.set_xlim(x_min+0.5, x_max-0.5)
-    ax.set_ylim(y_min+0.5, y_max-0.5)
-    ax.set_xlabel('$x_1$')
-    ax.set_ylabel('$x_2$')
+        self.show()
+        exit(self.qapp.exec_()) 
 
 
 def make_toy_dataset(n: int = 100, random_seed: int = None) -> (np.ndarray, np.ndarray):
@@ -79,6 +51,8 @@ def make_toy_dataset(n: int = 100, random_seed: int = None) -> (np.ndarray, np.n
     if random_seed:
         np.random.seed(random_seed)
 
+    # the X[i] is the sample
+    # the y[i] is the result of the sample
     X, y = make_gaussian_quantiles(n_samples=n, n_features=2, n_classes=2)
 
     return X, y*2-1
@@ -160,29 +134,26 @@ def plot_staged_adaboost(X, y, clf, iters=10):
         ax1, ax2 = axes[i]
 
         # Plot weak learner
-        _ = ax1.set_title(f'Weak learner at t={i + 1}\nalpha={clf.stump_weights[i]}\nepsilon={clf.errors[i]}')
+        _ = ax1.set_title(f'Weak learner at t={i + 1}\n\u03B1={clf.stump_weights[i]}\n\u03B5={clf.errors[i]}')
         plot_adaboost(
             X, y, clf.stumps[i], sample_weights=clf.sample_weights[i], annotate=False, ax=ax1)
 
         # Plot strong learner
         trunc_clf = truncate_adaboost(clf, t=i + 1)
-        _ = ax2.set_title(f'Strong learner at t={i + 1}\nalpha={clf.stump_weights[i]}\nepsilon={clf.errors[i]}')
+        _ = ax2.set_title(f'Strong learner at t={i + 1}\n\u03B1={clf.stump_weights[i]}\n\u03B5={clf.errors[i]}')
         plot_adaboost(
             X, y, trunc_clf, sample_weights=clf.sample_weights[i], annotate=False, ax=ax2)
 
     plt.tight_layout()
     plt.subplots_adjust(top=0.95)
-    plt.show()
-
+    a = ScrollableWindow(fig)
 
 AdaBoost.fit = fit
 AdaBoost.predict = predict
 X, y = make_toy_dataset(n=10, random_seed=10)
-clf = AdaBoost().fit(X, y, iters=10)
-plot_staged_adaboost(X, y, clf)
-
-clf = AdaBoost().fit(X, y, iters=10)
-plot_adaboost(X, y, clf)
+# here we have a fake dataset
+clf = AdaBoost().fit(X, y, iters=20)
+plot_staged_adaboost(X, y, clf, iters=20)
 
 train_err = (clf.predict(X) != y).mean()
 print(f'Train error: {train_err:.1%}')
