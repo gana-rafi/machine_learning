@@ -12,6 +12,7 @@ mpl.use('Qt5Agg')
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from LogisticRegression.model import LogisticRegressionUsingGD
 
 
 class ScrollableWindow(QtWidgets.QMainWindow):
@@ -133,9 +134,10 @@ def fit(self, X: np.ndarray, y: np.ndarray, iters: int):
     for t in range(iters):
         # fit  weak learner
         curr_sample_weights = self.sample_weights[t]
-        stump = DecisionTreeClassifier(max_depth=1, max_leaf_nodes=2)
+        #stump = DecisionTreeClassifier(max_depth=1, max_leaf_nodes=2)
+        stump = LogisticRegressionUsingGD()
         stump = stump.fit(X, y, sample_weight=curr_sample_weights)
-		
+        
         # calculate error and stump weight from weak learner prediction
         stump_pred = stump.predict(X)
         err = curr_sample_weights[(stump_pred != y)].sum()  # / n
@@ -154,6 +156,7 @@ def fit(self, X: np.ndarray, y: np.ndarray, iters: int):
         self.stumps[t] = stump
         self.stump_weights[t] = stump_weight
         self.errors[t] = err
+    
 
     return self
 
@@ -197,7 +200,7 @@ def plot_staged_adaboost(X, y, clf, iters=10):
 
         # Plot strong learner
         trunc_clf = truncate_adaboost(clf, t=i + 1)
-        _ = ax2.set_title(f'Strong learner at t={i + 1}')
+        _ = ax2.set_title(f'Strong learner at t={i + 1}\n\u03B1={clf.stump_weights[i]}\n\u03B5={clf.errors[i]}')
         plot_adaboost(
             X, y, trunc_clf, sample_weights=clf.sample_weights[i], annotate=False, ax=ax2)
 

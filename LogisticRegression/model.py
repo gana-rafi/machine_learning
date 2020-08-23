@@ -20,20 +20,21 @@ class LogisticRegressionUsingGD:
 
         return self.sigmoid(self.net_input(theta, x))
 
-    def cost_function(self, theta, x, y):
+    def cost_function(self, theta, x, y, weights, learning_coeff):
         # Computes the cost function for all the training samples
         m = x.shape[0]
         total_cost = -(1 / m) * np.sum(
-            y * np.log(self.probability(theta, x)) + (1 - y) * np.log(
-                1 - self.probability(theta, x)))
+            weights * (y * np.log(self.probability(theta, x)) + (1 - y) * np.log(
+                1 - self.probability(theta, x))))
         return total_cost
 
-    def gradient(self, theta, x, y):
+    def gradient(self, theta, x, y, weights, learning_coeff):
         # Computes the gradient of the cost function at the point theta
         m = x.shape[0]
-        return (1 / m) * np.dot(x.T, self.sigmoid(self.net_input(theta, x)) - y)
+        theta = theta.reshape(-1,1)
+        return learning_coeff * (1 / m) * np.dot(x.T, weights * self.sigmoid(self.net_input(theta, x)) - y)
 
-    def fit(self, x, y, theta):
+    def fit(self, x, y, sample_weight):
         """trains the model from the training data
         Uses the fmin_tnc function that is used to find the minimum for any function
         It takes arguments as
@@ -52,9 +53,14 @@ class LogisticRegressionUsingGD:
         -------
         self: An instance of self
         """
+        theta = np.random.rand(x.shape[1] + 1) #generate random vector
+        x_with_extra_freedom = np.c_[np.ones(x.shape[0]), x]
+        indexes_of_neg = y == -1
+        y[indexes_of_neg] = 0
+        learning_coeff = 0.001
 
         opt_weights = fmin_tnc(func=self.cost_function, x0=theta, fprime=self.gradient,
-                               args=(x, y.flatten()))
+                               args=(x_with_extra_freedom, y.reshape(-1, 1), sample_weight.reshape(-1, 1), learning_coeff))
         self.w_ = opt_weights[0]
         return self
 
