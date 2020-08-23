@@ -12,7 +12,7 @@ mpl.use('Qt5Agg')
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from LogisticRegression.model import LogisticRegressionUsingGD
+from LogisticRegression.model import LogisticRegression/model.py
 
 
 class ScrollableWindow(QtWidgets.QMainWindow):
@@ -118,6 +118,7 @@ def make_toy_dataset(n: int = 100, random_seed: int = None) -> (np.ndarray, np.n
 
 def fit(self, X: np.ndarray, y: np.ndarray, iters: int):
     """ Fit the model using training data """
+    """ the changes are the actual classifier, adaboost doesnt know about the implementation of it, wheather its a descision tree or logistic regression model."""
 
     X, y = self._check_X_y(X, y)
     n = X.shape[0]
@@ -200,7 +201,7 @@ def plot_staged_adaboost(X, y, clf, iters=10):
 
         # Plot strong learner
         trunc_clf = truncate_adaboost(clf, t=i + 1)
-        _ = ax2.set_title(f'Strong learner at t={i + 1}\n\u03B1={clf.stump_weights[i]}\n\u03B5={clf.errors[i]}')
+        _ = ax2.set_title(f'Strong learner at t={i + 1}')
         plot_adaboost(
             X, y, trunc_clf, sample_weights=clf.sample_weights[i], annotate=False, ax=ax2)
 

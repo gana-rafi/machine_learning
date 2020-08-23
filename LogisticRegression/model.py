@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fmin_tnc
+import pdb
 
 
 class LogisticRegressionUsingGD:
@@ -48,11 +49,12 @@ class LogisticRegressionUsingGD:
             Training samples
         y: array-like, shape = [n_samples, n_target_values]
             Target classes
-        theta: initial weights
+        sample_weight: initial weights
         Returns
         -------
         self: An instance of self
         """
+	""" the difference is that the weights are being optimized by the model. the coeefficiants(theta) are optimized from random"""
         theta = np.random.rand(x.shape[1] + 1) #generate random vector
         x_with_extra_freedom = np.c_[np.ones(x.shape[0]), x]
         indexes_of_neg = y == -1
