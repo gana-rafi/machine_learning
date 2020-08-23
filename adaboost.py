@@ -12,7 +12,7 @@ mpl.use('Qt5Agg')
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from LogisticRegression.model import LogisticRegression/model.py
+from LogisticRegression.model import LogisticRegressionUsingGD
 
 
 class ScrollableWindow(QtWidgets.QMainWindow):
@@ -48,6 +48,7 @@ def plot_adaboost(X: np.ndarray,
                   ax: Optional[mpl.axes.Axes] = None) -> None:
     """ Plot ± samples in 2D, optionally with decision boundary if model is provided. """
 
+    y[y == 0] = -1
     assert set(y) == {-1, 1}, 'Expecting response labels to be ±1'
 
     if not ax:

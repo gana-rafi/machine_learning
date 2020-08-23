@@ -22,6 +22,7 @@ class LogisticRegressionUsingGD:
         return self.sigmoid(self.net_input(theta, x))
 
     def cost_function(self, theta, x, y, weights, learning_coeff):
+        """the weights that we added, changes the cost"""
         # Computes the cost function for all the training samples
         m = x.shape[0]
         total_cost = -(1 / m) * np.sum(
@@ -54,12 +55,11 @@ class LogisticRegressionUsingGD:
         -------
         self: An instance of self
         """
-	""" the difference is that the weights are being optimized by the model. the coeefficiants(theta) are optimized from random"""
+        """ the difference is that the weights are being optimized by the model. the coeefficiants(theta) are optimized from random"""
         theta = np.random.rand(x.shape[1] + 1) #generate random vector
         x_with_extra_freedom = np.c_[np.ones(x.shape[0]), x]
-        indexes_of_neg = y == -1
-        y[indexes_of_neg] = 0
-        learning_coeff = 0.001
+        y[y == -1] = 0
+        learning_coeff = 0.01
 
         opt_weights = fmin_tnc(func=self.cost_function, x0=theta, fprime=self.gradient,
                                args=(x_with_extra_freedom, y.reshape(-1, 1), sample_weight.reshape(-1, 1), learning_coeff))
@@ -77,7 +77,12 @@ class LogisticRegressionUsingGD:
         predicted class labels
         """
         theta = self.w_[:, np.newaxis]
-        return self.probability(theta, x)
+        x_with_extra_freedom = np.c_[np.ones(x.shape[0]), x]
+        """map predictions to logistic values (classes)"""
+        result = self.probability(theta, x_with_extra_freedom).round()
+        result[result == 0] = -1
+
+        return result.flatten()
 
     def accuracy(self, x, actual_classes, probab_threshold=0.5):
         """Computes the accuracy of the classifier
